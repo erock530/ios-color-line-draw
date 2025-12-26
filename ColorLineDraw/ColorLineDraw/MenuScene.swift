@@ -178,13 +178,10 @@ class MenuScene: SKScene {
     }
     
     private func showGallery() {
-        // Placeholder - could show saved drawings
-        let alert = UIAlertController(title: "Gallery", message: "Coming soon! Save and view your artwork.", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-        
-        if let viewController = self.view?.window?.rootViewController {
-            viewController.present(alert, animated: true)
-        }
+        let galleryScene = GalleryScene(size: self.size)
+        galleryScene.scaleMode = .aspectFill
+        let transition = SKTransition.fade(withDuration: 0.3)
+        self.view?.presentScene(galleryScene, transition: transition)
     }
     
     private func showSettings() {

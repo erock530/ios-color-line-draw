@@ -32,15 +32,45 @@ class GameScene: SKScene {
     // Rainbow mode
     var rainbowHue: CGFloat = 0.0
     
+    // Drawing management
+    var currentDrawingId: UUID?
+    var backgroundImageNode: SKSpriteNode?
+    
+    // Safe area insets
+    var safeAreaInsets: UIEdgeInsets {
+        return view?.window?.safeAreaInsets ?? UIEdgeInsets(top: 44, left: 0, bottom: 34, right: 0)
+    }
+    
+    // UI dimensions with safe area
+    var topBarHeight: CGFloat { return 70 }
+    var bottomBarHeight: CGFloat { return 70 }
+    var topBarY: CGFloat { return frame.height - topBarHeight / 2 - safeAreaInsets.top }
+    var bottomBarY: CGFloat { return bottomBarHeight / 2 + safeAreaInsets.bottom }
+    
     // Safe drawing area (excludes UI)
     var drawingArea: CGRect {
-        return CGRect(x: 0, y: 80, width: frame.width, height: frame.height - 160)
+        let topBoundary = frame.height - topBarHeight - safeAreaInsets.top
+        let bottomBoundary = bottomBarHeight + safeAreaInsets.bottom
+        return CGRect(x: 0, y: bottomBoundary, width: frame.width, height: topBoundary - bottomBoundary)
     }
     
     override func didMove(to view: SKView) {
         super.didMove(to: view)
         backgroundColor = .white
         setupUI()
+    }
+    
+    // MARK: - Load Existing Drawing
+    
+    func loadDrawing(image: UIImage, drawingId: UUID) {
+        self.currentDrawingId = drawingId
+        
+        // Create background image from existing drawing
+        let texture = SKTexture(image: image)
+        backgroundImageNode = SKSpriteNode(texture: texture, size: frame.size)
+        backgroundImageNode?.position = CGPoint(x: frame.midX, y: frame.midY)
+        backgroundImageNode?.zPosition = -1
+        addChild(backgroundImageNode!)
     }
     
     // MARK: - Touch Handling
@@ -83,13 +113,15 @@ class GameScene: SKScene {
     }
     
     private func isTouchOnUI(_ position: CGPoint) -> Bool {
-        // Top bar area
-        if position.y > frame.height - 80 {
+        // Top bar area (including safe area)
+        let topBoundary = frame.height - topBarHeight - safeAreaInsets.top
+        if position.y > topBoundary {
             return true
         }
         
-        // Bottom bar area
-        if position.y < 80 {
+        // Bottom bar area (including safe area)
+        let bottomBoundary = bottomBarHeight + safeAreaInsets.bottom
+        if position.y < bottomBoundary {
             return true
         }
         
@@ -203,15 +235,78 @@ class GameScene: SKScene {
         let cgImage = texture.cgImage()
         let image = UIImage(cgImage: cgImage)
         
-        // Save to photo library
+        // Save using DrawingManager
+        if let savedDrawing = DrawingManager.shared.saveDrawing(image, drawingId: currentDrawingId) {
+            currentDrawingId = savedDrawing.id
+            showAlert(title: "Saved! 💾", message: "Your artwork has been saved to the gallery")
+        } else {
+            showAlert(title: "Error", message: "Could not save drawing")
+        }
+    }
+    
+    func exportToPhotos() {
+        // Hide UI for clean screenshot
+        topBarNode?.isHidden = true
+        bottomBarNode?.isHidden = true
+        
+        // Render the scene to an image
+        let texture = view?.texture(from: self)
+        
+        // Show UI again
+        topBarNode?.isHidden = false
+        bottomBarNode?.isHidden = false
+        
+        guard let texture = texture else {
+            showAlert(title: "Error", message: "Could not export drawing")
+            return
+        }
+        
+        let cgImage = texture.cgImage()
+        let image = UIImage(cgImage: cgImage)
+        
+        // Export to photo library
         UIImageWriteToSavedPhotosAlbum(image, self, #selector(image(_:didFinishSavingWithError:contextInfo:)), nil)
+    }
+    
+    func openGallery() {
+        let transition = SKTransition.fade(withDuration: 0.3)
+        let galleryScene = GalleryScene(size: self.size)
+        galleryScene.scaleMode = .aspectFill
+        self.view?.presentScene(galleryScene, transition: transition)
     }
     
     @objc func image(_ image: UIImage, didFinishSavingWithError error: Error?, contextInfo: UnsafeRawPointer) {
         if let error = error {
-            showAlert(title: "Save Failed", message: error.localizedDescription)
+            // Check if it's a permission error
+            let errorMessage = error.localizedDescription
+            if errorMessage.contains("privacy") || errorMessage.contains("authorized") || errorMessage.contains("permission") {
+                showPermissionAlert()
+            } else {
+                showAlert(title: "Save Failed", message: errorMessage)
+            }
         } else {
             showAlert(title: "Success! 🎉", message: "Your artwork has been saved to Photos")
+        }
+    }
+    
+    private func showPermissionAlert() {
+        let alert = UIAlertController(
+            title: "Photo Library Access Required",
+            message: "Color Line Draw needs permission to save your artwork to Photos. Please enable access in Settings.",
+            preferredStyle: .alert
+        )
+        
+        // Add button to open Settings
+        alert.addAction(UIAlertAction(title: "Open Settings", style: .default) { _ in
+            if let settingsURL = URL(string: UIApplication.openSettingsURLString) {
+                UIApplication.shared.open(settingsURL)
+            }
+        })
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        if let viewController = self.view?.window?.rootViewController {
+            viewController.present(alert, animated: true)
         }
     }
     
@@ -274,8 +369,8 @@ class GameScene: SKScene {
         topBarNode?.zPosition = 1000
         
         // Top bar background
-        let topBarBG = SKShapeNode(rectOf: CGSize(width: frame.width, height: 70))
-        topBarBG.position = CGPoint(x: frame.midX, y: frame.height - 35)
+        let topBarBG = SKShapeNode(rectOf: CGSize(width: frame.width, height: topBarHeight))
+        topBarBG.position = CGPoint(x: frame.midX, y: topBarY)
         topBarBG.fillColor = UIColor(red: 0.98, green: 0.98, blue: 0.98, alpha: 0.95)
         topBarBG.strokeColor = UIColor(white: 0.85, alpha: 1.0)
         topBarBG.lineWidth = 1
@@ -285,7 +380,7 @@ class GameScene: SKScene {
         createTopBarButton(
             name: "menu",
             text: "☰",
-            position: CGPoint(x: 40, y: frame.height - 35),
+            position: CGPoint(x: 40, y: topBarY),
             color: UIColor(red: 0.5, green: 0.5, blue: 0.5, alpha: 1.0)
         )
         
@@ -294,7 +389,7 @@ class GameScene: SKScene {
         titleLabel.text = "Color Line Draw"
         titleLabel.fontSize = 20
         titleLabel.fontColor = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
-        titleLabel.position = CGPoint(x: frame.midX, y: frame.height - 43)
+        titleLabel.position = CGPoint(x: frame.midX, y: topBarY - 8)
         titleLabel.verticalAlignmentMode = .center
         topBarNode?.addChild(titleLabel)
         
@@ -302,7 +397,7 @@ class GameScene: SKScene {
         createTopBarButton(
             name: "undo",
             text: "↶",
-            position: CGPoint(x: frame.width - 100, y: frame.height - 35),
+            position: CGPoint(x: frame.width - 100, y: topBarY),
             color: UIColor(red: 0.3, green: 0.5, blue: 0.8, alpha: 1.0)
         )
         
@@ -310,7 +405,7 @@ class GameScene: SKScene {
         createTopBarButton(
             name: "redo",
             text: "↷",
-            position: CGPoint(x: frame.width - 40, y: frame.height - 35),
+            position: CGPoint(x: frame.width - 40, y: topBarY),
             color: UIColor(red: 0.3, green: 0.5, blue: 0.8, alpha: 1.0)
         )
         
@@ -323,8 +418,8 @@ class GameScene: SKScene {
         bottomBarNode?.zPosition = 1000
         
         // Bottom bar background
-        let bottomBarBG = SKShapeNode(rectOf: CGSize(width: frame.width, height: 70))
-        bottomBarBG.position = CGPoint(x: frame.midX, y: 35)
+        let bottomBarBG = SKShapeNode(rectOf: CGSize(width: frame.width, height: bottomBarHeight))
+        bottomBarBG.position = CGPoint(x: frame.midX, y: bottomBarY)
         bottomBarBG.fillColor = UIColor(red: 0.98, green: 0.98, blue: 0.98, alpha: 0.95)
         bottomBarBG.strokeColor = UIColor(white: 0.85, alpha: 1.0)
         bottomBarBG.lineWidth = 1
@@ -338,7 +433,7 @@ class GameScene: SKScene {
             name: "pencil",
             text: "✏️",
             label: "Draw",
-            position: CGPoint(x: startX, y: 35),
+            position: CGPoint(x: startX, y: bottomBarY),
             selected: true
         )
         
@@ -347,7 +442,7 @@ class GameScene: SKScene {
             name: "eraser",
             text: "⌫",
             label: "Erase",
-            position: CGPoint(x: startX + iconSpacing, y: 35),
+            position: CGPoint(x: startX + iconSpacing, y: bottomBarY),
             selected: drawingMode == .eraser
         )
         
@@ -356,7 +451,7 @@ class GameScene: SKScene {
             name: "brushSize",
             text: "●",
             label: "Size",
-            position: CGPoint(x: startX + iconSpacing * 2, y: 35),
+            position: CGPoint(x: startX + iconSpacing * 2, y: bottomBarY),
             selected: false
         )
         
@@ -365,7 +460,7 @@ class GameScene: SKScene {
             name: "colorPalette",
             text: "🎨",
             label: "Color",
-            position: CGPoint(x: startX + iconSpacing * 3, y: 35),
+            position: CGPoint(x: startX + iconSpacing * 3, y: bottomBarY),
             selected: false
         )
         
@@ -374,7 +469,7 @@ class GameScene: SKScene {
             name: "rainbow",
             text: "🌈",
             label: "Rainbow",
-            position: CGPoint(x: startX + iconSpacing * 4, y: 35),
+            position: CGPoint(x: startX + iconSpacing * 4, y: bottomBarY),
             selected: drawingMode == .rainbow
         )
         
@@ -383,7 +478,7 @@ class GameScene: SKScene {
             name: "clear",
             text: "🗑",
             label: "Clear",
-            position: CGPoint(x: startX + iconSpacing * 5, y: 35),
+            position: CGPoint(x: startX + iconSpacing * 5, y: bottomBarY),
             selected: false
         )
         
@@ -591,7 +686,7 @@ class GameScene: SKScene {
         menuPanel?.addChild(overlay)
         
         // Menu panel background
-        let panelBG = SKShapeNode(rectOf: CGSize(width: 300, height: 400), cornerRadius: 20)
+        let panelBG = SKShapeNode(rectOf: CGSize(width: 300, height: 520), cornerRadius: 20)
         panelBG.position = CGPoint(x: frame.midX, y: frame.midY)
         panelBG.fillColor = .white
         panelBG.strokeColor = UIColor(red: 0.3, green: 0.6, blue: 1.0, alpha: 1.0)
@@ -603,23 +698,29 @@ class GameScene: SKScene {
         titleLabel.text = "Menu"
         titleLabel.fontSize = 28
         titleLabel.fontColor = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
-        titleLabel.position = CGPoint(x: frame.midX, y: frame.midY + 160)
+        titleLabel.position = CGPoint(x: frame.midX, y: frame.midY + 220)
         menuPanel?.addChild(titleLabel)
         
         // Menu options
-        var yPos: CGFloat = frame.midY + 80
+        var yPos: CGFloat = frame.midY + 100
         
-        createMenuOption(name: "save", text: "💾 Save Drawing", position: CGPoint(x: frame.midX, y: yPos))
+        createMenuOption(name: "save", text: "💾 Save to Gallery", position: CGPoint(x: frame.midX, y: yPos))
+        yPos -= 60
+        
+        createMenuOption(name: "exportPhotos", text: "📸 Export to Photos", position: CGPoint(x: frame.midX, y: yPos))
         yPos -= 60
         
         createMenuOption(name: "share", text: "📤 Share Drawing", position: CGPoint(x: frame.midX, y: yPos))
+        yPos -= 60
+        
+        createMenuOption(name: "gallery", text: "🖼 My Gallery", position: CGPoint(x: frame.midX, y: yPos))
         yPos -= 60
         
         createMenuOption(name: "newDrawing", text: "📄 New Drawing", position: CGPoint(x: frame.midX, y: yPos))
         yPos -= 60
         
         createMenuOption(name: "mainMenu", text: "🏠 Main Menu", position: CGPoint(x: frame.midX, y: yPos))
-        yPos -= 60
+        yPos -= 80
         
         createMenuOption(name: "resume", text: "✓ Resume", position: CGPoint(x: frame.midX, y: yPos), highlight: true)
         
@@ -858,10 +959,18 @@ class GameScene: SKScene {
                 animateButtonPress(node)
                 closeAllPanels()
                 return
+            } else if name == "exportPhotos" {
+                exportToPhotos()
+                animateButtonPress(node)
+                closeAllPanels()
+                return
             } else if name == "share" {
                 shareDrawing()
                 animateButtonPress(node)
                 closeAllPanels()
+                return
+            } else if name == "gallery" {
+                openGallery()
                 return
             } else if name == "newDrawing" {
                 showNewDrawingConfirmation()

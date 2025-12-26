@@ -9,6 +9,11 @@ import SpriteKit
 
 class SettingsScene: SKScene {
     
+    // Safe area insets
+    var safeAreaInsets: UIEdgeInsets {
+        return view?.window?.safeAreaInsets ?? UIEdgeInsets(top: 44, left: 0, bottom: 34, right: 0)
+    }
+    
     override func didMove(to view: SKView) {
         super.didMove(to: view)
         setupSettings()
@@ -17,12 +22,12 @@ class SettingsScene: SKScene {
     private func setupSettings() {
         backgroundColor = UIColor(red: 0.95, green: 0.97, blue: 1.0, alpha: 1.0)
         
-        // Title
+        // Title (accounting for safe area at top)
         let titleLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
         titleLabel.text = "Settings"
         titleLabel.fontSize = 40
         titleLabel.fontColor = UIColor(red: 0.2, green: 0.4, blue: 0.8, alpha: 1.0)
-        titleLabel.position = CGPoint(x: frame.midX, y: frame.maxY - 100)
+        titleLabel.position = CGPoint(x: frame.midX, y: frame.maxY - 100 - safeAreaInsets.top)
         addChild(titleLabel)
         
         // Settings info
@@ -30,7 +35,7 @@ class SettingsScene: SKScene {
         infoLabel.text = "Customize Your Experience"
         infoLabel.fontSize = 18
         infoLabel.fontColor = UIColor(red: 0.4, green: 0.5, blue: 0.7, alpha: 1.0)
-        infoLabel.position = CGPoint(x: frame.midX, y: frame.maxY - 150)
+        infoLabel.position = CGPoint(x: frame.midX, y: frame.maxY - 150 - safeAreaInsets.top)
         addChild(infoLabel)
         
         // Settings options (placeholders for future features)
@@ -61,7 +66,7 @@ class SettingsScene: SKScene {
     
     private func createBackButton() {
         let button = SKShapeNode(rectOf: CGSize(width: 200, height: 50), cornerRadius: 10)
-        button.position = CGPoint(x: frame.midX, y: frame.minY + 100)
+        button.position = CGPoint(x: frame.midX, y: frame.minY + 100 + safeAreaInsets.bottom)
         button.fillColor = UIColor(red: 0.5, green: 0.7, blue: 0.9, alpha: 1.0)
         button.strokeColor = .white
         button.lineWidth = 2

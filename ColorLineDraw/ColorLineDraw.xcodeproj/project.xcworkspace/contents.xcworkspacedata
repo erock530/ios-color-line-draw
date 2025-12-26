@@ -5,15 +5,30 @@
       location = "self:">
    </FileRef>
    <FileRef
-      location = "group:UI_REDESIGN_GUIDE.md">
+      location = "group:SAFE_AREA_UPDATES.md">
    </FileRef>
    <FileRef
-      location = "group:QUICK_REFERENCE.md">
+      location = "group:PHOTO_LIBRARY_FIX.md">
    </FileRef>
    <FileRef
-      location = "group:UI_REORGANIZATION_SUMMARY.md">
+      location = "group:QUICK_FIX.md">
    </FileRef>
    <FileRef
-      location = "group:UI_VISUAL_LAYOUT.md">
+      location = "group:DrawingManager.swift">
+   </FileRef>
+   <FileRef
+      location = "group:GalleryScene.swift">
+   </FileRef>
+   <FileRef
+      location = "group:GALLERY_IMPLEMENTATION.md">
+   </FileRef>
+   <FileRef
+      location = "group:GALLERY_QUICK_START.md">
+   </FileRef>
+   <FileRef
+      location = "group:IMPLEMENTATION_SUMMARY.md">
+   </FileRef>
+   <FileRef
+      location = "group:BUILD_CHECKLIST.md">
    </FileRef>
 </Workspace>

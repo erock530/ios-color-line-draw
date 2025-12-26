@@ -20,6 +20,8 @@
 		889994D92BD704E30075A0AC /* ColorLineDrawUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 889994D82BD704E30075A0AC /* ColorLineDrawUITestsLaunchTests.swift */; };
 		88D1B0092EFF4C2F00F56468 /* MenuScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88D1B0052EFF4AC700F56468 /* MenuScene.swift */; };
 		88D1B00A2EFF4C3400F56468 /* SettingsScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88D1B0062EFF4AD500F56468 /* SettingsScene.swift */; };
+		88D1B00E2EFF555900F56468 /* DrawingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88D1B00D2EFF555900F56468 /* DrawingManager.swift */; };
+		88D1B0102EFF556700F56468 /* GalleryScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88D1B00F2EFF556700F56468 /* GalleryScene.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -58,6 +60,9 @@
 		88D1B0062EFF4AD500F56468 /* SettingsScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScene.swift; sourceTree = "<group>"; };
 		88D1B0072EFF4B1600F56468 /* ENHANCEMENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ENHANCEMENTS.md; sourceTree = "<group>"; };
 		88D1B0082EFF4B5000F56468 /* SETUP_NOTES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = SETUP_NOTES.md; sourceTree = "<group>"; };
+		88D1B00C2EFF536A00F56468 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		88D1B00D2EFF555900F56468 /* DrawingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawingManager.swift; sourceTree = "<group>"; };
+		88D1B00F2EFF556700F56468 /* GalleryScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalleryScene.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -110,6 +115,7 @@
 		889994B12BD704E20075A0AC /* ColorLineDraw */ = {
 			isa = PBXGroup;
 			children = (
+				88D1B00C2EFF536A00F56468 /* Info.plist */,
 				889994B22BD704E20075A0AC /* AppDelegate.swift */,
 				889994B42BD704E20075A0AC /* GameScene.sks */,
 				889994B62BD704E20075A0AC /* Actions.sks */,
@@ -118,6 +124,8 @@
 				889994B82BD704E20075A0AC /* GameScene.swift */,
 				889994BA2BD704E20075A0AC /* GameViewController.swift */,
 				889994BC2BD704E20075A0AC /* Main.storyboard */,
+				88D1B00F2EFF556700F56468 /* GalleryScene.swift */,
+				88D1B00D2EFF555900F56468 /* DrawingManager.swift */,
 				889994BF2BD704E30075A0AC /* Assets.xcassets */,
 				889994C12BD704E30075A0AC /* LaunchScreen.storyboard */,
 			);
@@ -275,9 +283,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				889994B92BD704E20075A0AC /* GameScene.swift in Sources */,
+				88D1B0102EFF556700F56468 /* GalleryScene.swift in Sources */,
 				88D1B0092EFF4C2F00F56468 /* MenuScene.swift in Sources */,
 				889994BB2BD704E20075A0AC /* GameViewController.swift in Sources */,
 				88D1B00A2EFF4C3400F56468 /* SettingsScene.swift in Sources */,
+				88D1B00E2EFF555900F56468 /* DrawingManager.swift in Sources */,
 				889994B32BD704E20075A0AC /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -463,8 +473,10 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 3F7GR3D7RS;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ColorLineDraw/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Color Line Draw";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.games";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Color Line Draw needs access to save your artwork to your photo library.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -496,8 +508,10 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 3F7GR3D7RS;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ColorLineDraw/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Color Line Draw";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.games";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Color Line Draw needs access to save your artwork to your photo library.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
