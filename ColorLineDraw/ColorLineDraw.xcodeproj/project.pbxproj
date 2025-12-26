@@ -18,6 +18,8 @@
 		889994CD2BD704E30075A0AC /* ColorLineDrawTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 889994CC2BD704E30075A0AC /* ColorLineDrawTests.swift */; };
 		889994D72BD704E30075A0AC /* ColorLineDrawUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 889994D62BD704E30075A0AC /* ColorLineDrawUITests.swift */; };
 		889994D92BD704E30075A0AC /* ColorLineDrawUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 889994D82BD704E30075A0AC /* ColorLineDrawUITestsLaunchTests.swift */; };
+		88D1B0092EFF4C2F00F56468 /* MenuScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88D1B0052EFF4AC700F56468 /* MenuScene.swift */; };
+		88D1B00A2EFF4C3400F56468 /* SettingsScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88D1B0062EFF4AD500F56468 /* SettingsScene.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -52,6 +54,10 @@
 		889994D22BD704E30075A0AC /* ColorLineDrawUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ColorLineDrawUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		889994D62BD704E30075A0AC /* ColorLineDrawUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorLineDrawUITests.swift; sourceTree = "<group>"; };
 		889994D82BD704E30075A0AC /* ColorLineDrawUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorLineDrawUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		88D1B0052EFF4AC700F56468 /* MenuScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuScene.swift; sourceTree = "<group>"; };
+		88D1B0062EFF4AD500F56468 /* SettingsScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScene.swift; sourceTree = "<group>"; };
+		88D1B0072EFF4B1600F56468 /* ENHANCEMENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ENHANCEMENTS.md; sourceTree = "<group>"; };
+		88D1B0082EFF4B5000F56468 /* SETUP_NOTES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = SETUP_NOTES.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -86,6 +92,8 @@
 				889994CB2BD704E30075A0AC /* ColorLineDrawTests */,
 				889994D52BD704E30075A0AC /* ColorLineDrawUITests */,
 				889994B02BD704E20075A0AC /* Products */,
+				88D1B0072EFF4B1600F56468 /* ENHANCEMENTS.md */,
+				88D1B0082EFF4B5000F56468 /* SETUP_NOTES.md */,
 			);
 			sourceTree = "<group>";
 		};
@@ -105,6 +113,8 @@
 				889994B22BD704E20075A0AC /* AppDelegate.swift */,
 				889994B42BD704E20075A0AC /* GameScene.sks */,
 				889994B62BD704E20075A0AC /* Actions.sks */,
+				88D1B0052EFF4AC700F56468 /* MenuScene.swift */,
+				88D1B0062EFF4AD500F56468 /* SettingsScene.swift */,
 				889994B82BD704E20075A0AC /* GameScene.swift */,
 				889994BA2BD704E20075A0AC /* GameViewController.swift */,
 				889994BC2BD704E20075A0AC /* Main.storyboard */,
@@ -265,7 +275,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				889994B92BD704E20075A0AC /* GameScene.swift in Sources */,
+				88D1B0092EFF4C2F00F56468 /* MenuScene.swift in Sources */,
 				889994BB2BD704E20075A0AC /* GameViewController.swift in Sources */,
+				88D1B00A2EFF4C3400F56468 /* SettingsScene.swift in Sources */,
 				889994B32BD704E20075A0AC /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -446,11 +458,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
-				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3F7GR3D7RS;
+				DEVELOPMENT_TEAM = 3F7GR3D7RS;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Color Line Draw";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.games";
@@ -469,7 +480,6 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.ericcolangelo.ColorLineDraw1;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Eric Colangelo profile";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -481,11 +491,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
-				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3F7GR3D7RS;
+				DEVELOPMENT_TEAM = 3F7GR3D7RS;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Color Line Draw";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.games";
@@ -504,7 +513,6 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.ericcolangelo.ColorLineDraw1;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Eric Colangelo profile";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
