@@ -17,17 +17,30 @@ class GameScene: SKScene {
     var drawingHistory: [SKShapeNode] = []
     var redoStack: [SKShapeNode] = []
     
-    // UI Container
-    var toolbarNode: SKNode?
-    var isToolbarArea: Bool = false
+    // UI Containers
+    var topBarNode: SKNode?
+    var bottomBarNode: SKNode?
+    var brushSizePanel: SKNode?
+    var colorPalettePanel: SKNode?
+    var menuPanel: SKNode?
+    
+    // UI State
+    var isPanelOpen: Bool = false
+    var isBrushPanelOpen: Bool = false
+    var isColorPanelOpen: Bool = false
     
     // Rainbow mode
     var rainbowHue: CGFloat = 0.0
     
+    // Safe drawing area (excludes UI)
+    var drawingArea: CGRect {
+        return CGRect(x: 0, y: 80, width: frame.width, height: frame.height - 160)
+    }
+    
     override func didMove(to view: SKView) {
         super.didMove(to: view)
         backgroundColor = .white
-        setupToolbar()
+        setupUI()
     }
     
     // MARK: - Touch Handling
@@ -36,30 +49,56 @@ class GameScene: SKScene {
         guard let touch = touches.first else { return }
         let position = touch.location(in: self)
         
-        // Check if touch is on toolbar
-        if position.y < 120 {
-            handleToolbarTouch(at: position)
+        // Check if touch is on UI elements
+        if isTouchOnUI(position) {
+            handleUITouch(at: position)
             return
         }
         
-        // Start drawing
-        startLine(at: position)
+        // Close any open panels when drawing
+        if isPanelOpen {
+            closeAllPanels()
+        }
+        
+        // Start drawing if in drawing area
+        if drawingArea.contains(position) {
+            startLine(at: position)
+        }
     }
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
         let position = touch.location(in: self)
         
-        // Don't draw in toolbar area
-        if position.y < 120 { return }
-        
-        continueLine(to: position)
+        // Only continue drawing if in drawing area
+        if drawingArea.contains(position) && currentLine != nil {
+            continueLine(to: position)
+        }
     }
     
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         if currentLine != nil {
             currentLine = nil
         }
+    }
+    
+    private func isTouchOnUI(_ position: CGPoint) -> Bool {
+        // Top bar area
+        if position.y > frame.height - 80 {
+            return true
+        }
+        
+        // Bottom bar area
+        if position.y < 80 {
+            return true
+        }
+        
+        // Check if any panel is open and touched
+        if isPanelOpen {
+            return true
+        }
+        
+        return false
     }
     
     // MARK: - Drawing Functions
@@ -128,29 +167,33 @@ class GameScene: SKScene {
     
     func setLineWidth(_ width: CGFloat) {
         lineWidth = width
-        updateToolbarSelection()
+        if isBrushPanelOpen {
+            showBrushSizePanel() // Refresh to show new selection
+        }
     }
     
     func setDrawingMode(_ mode: DrawingMode) {
         drawingMode = mode
-        updateToolbarSelection()
+        setupBottomBar() // Refresh to show new selection
     }
     
     func pickColor(_ color: UIColor) {
         lineColor = color
         drawingMode = .singleColor
-        updateToolbarSelection()
+        setupBottomBar() // Refresh UI
     }
     
     func saveDrawing() {
-        // Hide toolbar for clean screenshot
-        toolbarNode?.isHidden = true
+        // Hide UI for clean screenshot
+        topBarNode?.isHidden = true
+        bottomBarNode?.isHidden = true
         
         // Render the scene to an image
         let texture = view?.texture(from: self)
         
-        // Show toolbar again
-        toolbarNode?.isHidden = false
+        // Show UI again
+        topBarNode?.isHidden = false
+        bottomBarNode?.isHidden = false
         
         guard let texture = texture else {
             showAlert(title: "Error", message: "Could not save drawing")
@@ -173,14 +216,16 @@ class GameScene: SKScene {
     }
     
     func shareDrawing() {
-        // Hide toolbar for clean screenshot
-        toolbarNode?.isHidden = true
+        // Hide UI for clean screenshot
+        topBarNode?.isHidden = true
+        bottomBarNode?.isHidden = true
         
         // Render the scene to an image
         let texture = view?.texture(from: self)
         
-        // Show toolbar again
-        toolbarNode?.isHidden = false
+        // Show UI again
+        topBarNode?.isHidden = false
+        bottomBarNode?.isHidden = false
         
         guard let texture = texture else {
             showAlert(title: "Error", message: "Could not share drawing")
@@ -216,155 +261,526 @@ class GameScene: SKScene {
         }
     }
     
-    // MARK: - Toolbar Setup
+    // MARK: - UI Setup
     
-    private func setupToolbar() {
-        toolbarNode?.removeFromParent()
-        toolbarNode = SKNode()
-        
-        // Background for toolbar
-        let toolbarBG = SKShapeNode(rectOf: CGSize(width: frame.width, height: 100))
-        toolbarBG.position = CGPoint(x: frame.midX, y: 50)
-        toolbarBG.fillColor = UIColor(white: 0.95, alpha: 1.0)
-        toolbarBG.strokeColor = UIColor(white: 0.8, alpha: 1.0)
-        toolbarBG.lineWidth = 1
-        toolbarBG.zPosition = 100
-        toolbarNode?.addChild(toolbarBG)
-        
-        let buttonSpacing: CGFloat = 70
-        let startX: CGFloat = 40
-        
-        // Menu Button (back to menu)
-        createToolButton(name: "menu", text: "☰", position: CGPoint(x: 25, y: 75))
-        
-        // Share Button (top row, right side)
-        createToolButton(name: "share", text: "📤", position: CGPoint(x: frame.maxX - 90, y: 75))
-        
-        // Save Button (top row, right side)
-        createToolButton(name: "save", text: "💾", position: CGPoint(x: frame.maxX - 30, y: 75))
-        
-        // Undo Button
-        createToolButton(name: "undo", text: "↶", position: CGPoint(x: startX, y: 50))
-        
-        // Redo Button
-        createToolButton(name: "redo", text: "↷", position: CGPoint(x: startX + buttonSpacing, y: 50))
-        
-        // Clear Button
-        createToolButton(name: "clear", text: "✕", position: CGPoint(x: startX + buttonSpacing * 2, y: 50))
-        
-        // Rainbow Mode Button
-        createToolButton(name: "rainbow", text: "🌈", position: CGPoint(x: startX + buttonSpacing * 3, y: 50), selected: drawingMode == .rainbow)
-        
-        // Eraser Button
-        createToolButton(name: "eraser", text: "⌫", position: CGPoint(x: startX + buttonSpacing * 4, y: 50), selected: drawingMode == .eraser)
-        
-        // Line Width Buttons
-        createLineWidthButton(name: "thin", width: 2, position: CGPoint(x: frame.maxX - 180, y: 50))
-        createLineWidthButton(name: "medium", width: 5, position: CGPoint(x: frame.maxX - 120, y: 50))
-        createLineWidthButton(name: "thick", width: 10, position: CGPoint(x: frame.maxX - 60, y: 50))
-        
-        // Color Palette (bottom row)
-        let colorY: CGFloat = 20
-        let colors: [(String, UIColor)] = [
-            ("red", .red),
-            ("orange", .orange),
-            ("yellow", .yellow),
-            ("green", .green),
-            ("cyan", .cyan),
-            ("blue", .blue),
-            ("purple", .purple),
-            ("magenta", .magenta)
-        ]
-        
-        for (index, colorData) in colors.enumerated() {
-            let x = startX + CGFloat(index) * 40
-            createColorButton(name: "color_\(colorData.0)", color: colorData.1, position: CGPoint(x: x, y: colorY))
-        }
-        
-        self.addChild(toolbarNode!)
+    private func setupUI() {
+        setupTopBar()
+        setupBottomBar()
     }
     
-    private func createToolButton(name: String, text: String, position: CGPoint, selected: Bool = false) {
-        let button = SKShapeNode(circleOfRadius: 25)
+    private func setupTopBar() {
+        topBarNode?.removeFromParent()
+        topBarNode = SKNode()
+        topBarNode?.zPosition = 1000
+        
+        // Top bar background
+        let topBarBG = SKShapeNode(rectOf: CGSize(width: frame.width, height: 70))
+        topBarBG.position = CGPoint(x: frame.midX, y: frame.height - 35)
+        topBarBG.fillColor = UIColor(red: 0.98, green: 0.98, blue: 0.98, alpha: 0.95)
+        topBarBG.strokeColor = UIColor(white: 0.85, alpha: 1.0)
+        topBarBG.lineWidth = 1
+        topBarNode?.addChild(topBarBG)
+        
+        // Menu button (left)
+        createTopBarButton(
+            name: "menu",
+            text: "☰",
+            position: CGPoint(x: 40, y: frame.height - 35),
+            color: UIColor(red: 0.5, green: 0.5, blue: 0.5, alpha: 1.0)
+        )
+        
+        // Title label (center)
+        let titleLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        titleLabel.text = "Color Line Draw"
+        titleLabel.fontSize = 20
+        titleLabel.fontColor = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
+        titleLabel.position = CGPoint(x: frame.midX, y: frame.height - 43)
+        titleLabel.verticalAlignmentMode = .center
+        topBarNode?.addChild(titleLabel)
+        
+        // Undo button (right side)
+        createTopBarButton(
+            name: "undo",
+            text: "↶",
+            position: CGPoint(x: frame.width - 100, y: frame.height - 35),
+            color: UIColor(red: 0.3, green: 0.5, blue: 0.8, alpha: 1.0)
+        )
+        
+        // Redo button (right side)
+        createTopBarButton(
+            name: "redo",
+            text: "↷",
+            position: CGPoint(x: frame.width - 40, y: frame.height - 35),
+            color: UIColor(red: 0.3, green: 0.5, blue: 0.8, alpha: 1.0)
+        )
+        
+        addChild(topBarNode!)
+    }
+    
+    private func setupBottomBar() {
+        bottomBarNode?.removeFromParent()
+        bottomBarNode = SKNode()
+        bottomBarNode?.zPosition = 1000
+        
+        // Bottom bar background
+        let bottomBarBG = SKShapeNode(rectOf: CGSize(width: frame.width, height: 70))
+        bottomBarBG.position = CGPoint(x: frame.midX, y: 35)
+        bottomBarBG.fillColor = UIColor(red: 0.98, green: 0.98, blue: 0.98, alpha: 0.95)
+        bottomBarBG.strokeColor = UIColor(white: 0.85, alpha: 1.0)
+        bottomBarBG.lineWidth = 1
+        bottomBarNode?.addChild(bottomBarBG)
+        
+        let iconSpacing: CGFloat = frame.width / 6
+        let startX: CGFloat = iconSpacing / 2
+        
+        // Brush/Pencil tool
+        createBottomBarIcon(
+            name: "pencil",
+            text: "✏️",
+            label: "Draw",
+            position: CGPoint(x: startX, y: 35),
+            selected: true
+        )
+        
+        // Eraser tool
+        createBottomBarIcon(
+            name: "eraser",
+            text: "⌫",
+            label: "Erase",
+            position: CGPoint(x: startX + iconSpacing, y: 35),
+            selected: drawingMode == .eraser
+        )
+        
+        // Brush size selector
+        createBottomBarIcon(
+            name: "brushSize",
+            text: "●",
+            label: "Size",
+            position: CGPoint(x: startX + iconSpacing * 2, y: 35),
+            selected: false
+        )
+        
+        // Color palette
+        createBottomBarIcon(
+            name: "colorPalette",
+            text: "🎨",
+            label: "Color",
+            position: CGPoint(x: startX + iconSpacing * 3, y: 35),
+            selected: false
+        )
+        
+        // Rainbow mode
+        createBottomBarIcon(
+            name: "rainbow",
+            text: "🌈",
+            label: "Rainbow",
+            position: CGPoint(x: startX + iconSpacing * 4, y: 35),
+            selected: drawingMode == .rainbow
+        )
+        
+        // Clear canvas
+        createBottomBarIcon(
+            name: "clear",
+            text: "🗑",
+            label: "Clear",
+            position: CGPoint(x: startX + iconSpacing * 5, y: 35),
+            selected: false
+        )
+        
+        addChild(bottomBarNode!)
+    }
+    
+    private func createTopBarButton(name: String, text: String, position: CGPoint, color: UIColor) {
+        let button = SKShapeNode(circleOfRadius: 22)
         button.position = position
-        button.fillColor = selected ? UIColor(red: 0.3, green: 0.5, blue: 1.0, alpha: 1.0) : .white
-        button.strokeColor = UIColor(white: 0.7, alpha: 1.0)
-        button.lineWidth = 2
+        button.fillColor = color
+        button.strokeColor = .clear
         button.name = name
-        button.zPosition = 101
+        button.zPosition = 1001
+        
+        // Add shadow effect with a slightly darker circle behind
+        let shadow = SKShapeNode(circleOfRadius: 22)
+        shadow.position = CGPoint(x: 0, y: -2)
+        shadow.fillColor = UIColor(white: 0, alpha: 0.1)
+        shadow.strokeColor = .clear
+        shadow.zPosition = -1
+        button.addChild(shadow)
         
         let label = SKLabelNode(text: text)
         label.fontSize = 24
         label.verticalAlignmentMode = .center
-        label.fontName = "Arial"
+        label.fontColor = .white
         label.name = name
-        label.zPosition = 102
         button.addChild(label)
         
-        toolbarNode?.addChild(button)
+        topBarNode?.addChild(button)
     }
     
-    private func createLineWidthButton(name: String, width: CGFloat, position: CGPoint) {
-        let button = SKShapeNode(circleOfRadius: 20)
+    private func createBottomBarIcon(name: String, text: String, label: String, position: CGPoint, selected: Bool) {
+        let container = SKNode()
+        container.position = position
+        container.name = name
+        container.zPosition = 1001
+        
+        // Icon background circle
+        let iconBG = SKShapeNode(circleOfRadius: 24)
+        iconBG.fillColor = selected ? UIColor(red: 0.3, green: 0.6, blue: 1.0, alpha: 1.0) : UIColor(white: 0.95, alpha: 1.0)
+        iconBG.strokeColor = selected ? UIColor(red: 0.2, green: 0.4, blue: 0.8, alpha: 1.0) : UIColor(white: 0.85, alpha: 1.0)
+        iconBG.lineWidth = 2
+        iconBG.name = name
+        container.addChild(iconBG)
+        
+        // Icon emoji
+        let iconLabel = SKLabelNode(text: text)
+        iconLabel.fontSize = 22
+        iconLabel.verticalAlignmentMode = .center
+        iconLabel.name = name
+        container.addChild(iconLabel)
+        
+        // Label below icon
+        let textLabel = SKLabelNode(fontNamed: "AvenirNext-Medium")
+        textLabel.text = label
+        textLabel.fontSize = 10
+        textLabel.fontColor = selected ? UIColor(red: 0.3, green: 0.6, blue: 1.0, alpha: 1.0) : UIColor(white: 0.5, alpha: 1.0)
+        textLabel.position = CGPoint(x: 0, y: -30)
+        textLabel.verticalAlignmentMode = .center
+        textLabel.name = name
+        container.addChild(textLabel)
+        
+        bottomBarNode?.addChild(container)
+    }
+    
+    // MARK: - Panel Systems
+    
+    private func showBrushSizePanel() {
+        closeAllPanels()
+        isBrushPanelOpen = true
+        isPanelOpen = true
+        
+        brushSizePanel = SKNode()
+        brushSizePanel?.zPosition = 2000
+        
+        // Panel background
+        let panelBG = SKShapeNode(rectOf: CGSize(width: 280, height: 200), cornerRadius: 15)
+        panelBG.position = CGPoint(x: frame.midX, y: frame.midY)
+        panelBG.fillColor = UIColor(white: 0.95, alpha: 0.98)
+        panelBG.strokeColor = UIColor(red: 0.3, green: 0.6, blue: 1.0, alpha: 1.0)
+        panelBG.lineWidth = 3
+        brushSizePanel?.addChild(panelBG)
+        
+        // Title
+        let titleLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        titleLabel.text = "Brush Size"
+        titleLabel.fontSize = 22
+        titleLabel.fontColor = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
+        titleLabel.position = CGPoint(x: frame.midX, y: frame.midY + 70)
+        brushSizePanel?.addChild(titleLabel)
+        
+        // Brush size options
+        let sizes: [(String, CGFloat, String)] = [
+            ("Thin", 2, "✏️"),
+            ("Medium", 5, "🖊"),
+            ("Thick", 10, "🖍"),
+            ("Extra Thick", 15, "🖌")
+        ]
+        
+        var yPos: CGFloat = frame.midY + 25
+        for sizeData in sizes {
+            createBrushSizeOption(
+                name: "size_\(Int(sizeData.1))",
+                label: sizeData.0,
+                icon: sizeData.2,
+                size: sizeData.1,
+                position: CGPoint(x: frame.midX, y: yPos),
+                selected: lineWidth == sizeData.1
+            )
+            yPos -= 45
+        }
+        
+        // Close button
+        createPanelCloseButton(panel: brushSizePanel!, position: CGPoint(x: frame.midX, y: frame.midY - 80))
+        
+        addChild(brushSizePanel!)
+        animatePanelIn(brushSizePanel!)
+    }
+    
+    private func showColorPalettePanel() {
+        closeAllPanels()
+        isColorPanelOpen = true
+        isPanelOpen = true
+        
+        colorPalettePanel = SKNode()
+        colorPalettePanel?.zPosition = 2000
+        
+        // Panel background
+        let panelBG = SKShapeNode(rectOf: CGSize(width: 320, height: 380), cornerRadius: 15)
+        panelBG.position = CGPoint(x: frame.midX, y: frame.midY)
+        panelBG.fillColor = UIColor(white: 0.95, alpha: 0.98)
+        panelBG.strokeColor = UIColor(red: 0.3, green: 0.6, blue: 1.0, alpha: 1.0)
+        panelBG.lineWidth = 3
+        colorPalettePanel?.addChild(panelBG)
+        
+        // Title
+        let titleLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        titleLabel.text = "Choose Color"
+        titleLabel.fontSize = 22
+        titleLabel.fontColor = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
+        titleLabel.position = CGPoint(x: frame.midX, y: frame.midY + 160)
+        colorPalettePanel?.addChild(titleLabel)
+        
+        // Color grid
+        let colors: [(String, UIColor)] = [
+            ("Red", .red),
+            ("Orange", .orange),
+            ("Yellow", .yellow),
+            ("Green", .green),
+            ("Cyan", UIColor(red: 0, green: 0.8, blue: 0.8, alpha: 1.0)),
+            ("Blue", .blue),
+            ("Purple", .purple),
+            ("Magenta", .magenta),
+            ("Pink", UIColor(red: 1.0, green: 0.4, blue: 0.7, alpha: 1.0)),
+            ("Brown", .brown),
+            ("Black", .black),
+            ("Gray", .gray)
+        ]
+        
+        let columns = 3
+        let spacing: CGFloat = 90
+        let startX = frame.midX - spacing
+        var row = 0
+        var col = 0
+        
+        for colorData in colors {
+            let x = startX + CGFloat(col) * spacing
+            let y = frame.midY + 100 - CGFloat(row) * 75
+            
+            createColorOption(
+                name: "color_\(colorData.0.lowercased())",
+                label: colorData.0,
+                color: colorData.1,
+                position: CGPoint(x: x, y: y)
+            )
+            
+            col += 1
+            if col >= columns {
+                col = 0
+                row += 1
+            }
+        }
+        
+        // Close button
+        createPanelCloseButton(panel: colorPalettePanel!, position: CGPoint(x: frame.midX, y: frame.midY - 170))
+        
+        addChild(colorPalettePanel!)
+        animatePanelIn(colorPalettePanel!)
+    }
+    
+    private func showMenuPanel() {
+        closeAllPanels()
+        isPanelOpen = true
+        
+        menuPanel = SKNode()
+        menuPanel?.zPosition = 2000
+        
+        // Semi-transparent overlay
+        let overlay = SKShapeNode(rectOf: CGSize(width: frame.width, height: frame.height))
+        overlay.position = CGPoint(x: frame.midX, y: frame.midY)
+        overlay.fillColor = UIColor(white: 0, alpha: 0.5)
+        overlay.strokeColor = .clear
+        overlay.name = "overlay"
+        menuPanel?.addChild(overlay)
+        
+        // Menu panel background
+        let panelBG = SKShapeNode(rectOf: CGSize(width: 300, height: 400), cornerRadius: 20)
+        panelBG.position = CGPoint(x: frame.midX, y: frame.midY)
+        panelBG.fillColor = .white
+        panelBG.strokeColor = UIColor(red: 0.3, green: 0.6, blue: 1.0, alpha: 1.0)
+        panelBG.lineWidth = 3
+        menuPanel?.addChild(panelBG)
+        
+        // Title
+        let titleLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        titleLabel.text = "Menu"
+        titleLabel.fontSize = 28
+        titleLabel.fontColor = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
+        titleLabel.position = CGPoint(x: frame.midX, y: frame.midY + 160)
+        menuPanel?.addChild(titleLabel)
+        
+        // Menu options
+        var yPos: CGFloat = frame.midY + 80
+        
+        createMenuOption(name: "save", text: "💾 Save Drawing", position: CGPoint(x: frame.midX, y: yPos))
+        yPos -= 60
+        
+        createMenuOption(name: "share", text: "📤 Share Drawing", position: CGPoint(x: frame.midX, y: yPos))
+        yPos -= 60
+        
+        createMenuOption(name: "newDrawing", text: "📄 New Drawing", position: CGPoint(x: frame.midX, y: yPos))
+        yPos -= 60
+        
+        createMenuOption(name: "mainMenu", text: "🏠 Main Menu", position: CGPoint(x: frame.midX, y: yPos))
+        yPos -= 60
+        
+        createMenuOption(name: "resume", text: "✓ Resume", position: CGPoint(x: frame.midX, y: yPos), highlight: true)
+        
+        addChild(menuPanel!)
+        animatePanelIn(menuPanel!)
+    }
+    
+    private func createBrushSizeOption(name: String, label: String, icon: String, size: CGFloat, position: CGPoint, selected: Bool) {
+        let container = SKNode()
+        container.position = position
+        container.name = name
+        
+        // Background
+        let bg = SKShapeNode(rectOf: CGSize(width: 250, height: 35), cornerRadius: 8)
+        bg.fillColor = selected ? UIColor(red: 0.3, green: 0.6, blue: 1.0, alpha: 0.3) : UIColor(white: 1.0, alpha: 0.8)
+        bg.strokeColor = selected ? UIColor(red: 0.3, green: 0.6, blue: 1.0, alpha: 1.0) : UIColor(white: 0.8, alpha: 1.0)
+        bg.lineWidth = 2
+        bg.name = name
+        container.addChild(bg)
+        
+        // Icon
+        let iconLabel = SKLabelNode(text: icon)
+        iconLabel.fontSize = 20
+        iconLabel.position = CGPoint(x: -100, y: -7)
+        iconLabel.name = name
+        container.addChild(iconLabel)
+        
+        // Label
+        let textLabel = SKLabelNode(fontNamed: "AvenirNext-Medium")
+        textLabel.text = label
+        textLabel.fontSize = 16
+        textLabel.fontColor = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
+        textLabel.position = CGPoint(x: -50, y: -7)
+        textLabel.horizontalAlignmentMode = .left
+        textLabel.name = name
+        container.addChild(textLabel)
+        
+        // Visual preview
+        let preview = SKShapeNode(circleOfRadius: size)
+        preview.fillColor = .black
+        preview.strokeColor = .clear
+        preview.position = CGPoint(x: 90, y: 0)
+        preview.name = name
+        container.addChild(preview)
+        
+        brushSizePanel?.addChild(container)
+    }
+    
+    private func createColorOption(name: String, label: String, color: UIColor, position: CGPoint) {
+        let container = SKNode()
+        container.position = position
+        container.name = name
+        
+        // Color circle
+        let colorCircle = SKShapeNode(circleOfRadius: 28)
+        colorCircle.fillColor = color
+        colorCircle.strokeColor = UIColor(white: 0.3, alpha: 1.0)
+        colorCircle.lineWidth = 3
+        colorCircle.name = name
+        container.addChild(colorCircle)
+        
+        // Label
+        let textLabel = SKLabelNode(fontNamed: "AvenirNext-Medium")
+        textLabel.text = label
+        textLabel.fontSize = 12
+        textLabel.fontColor = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
+        textLabel.position = CGPoint(x: 0, y: -45)
+        textLabel.name = name
+        container.addChild(textLabel)
+        
+        colorPalettePanel?.addChild(container)
+    }
+    
+    private func createMenuOption(name: String, text: String, position: CGPoint, highlight: Bool = false) {
+        let button = SKShapeNode(rectOf: CGSize(width: 260, height: 50), cornerRadius: 12)
         button.position = position
-        button.fillColor = lineWidth == width ? UIColor(red: 0.3, green: 0.5, blue: 1.0, alpha: 1.0) : .white
-        button.strokeColor = UIColor(white: 0.7, alpha: 1.0)
+        button.fillColor = highlight ? UIColor(red: 0.3, green: 0.6, blue: 1.0, alpha: 1.0) : UIColor(white: 0.95, alpha: 1.0)
+        button.strokeColor = highlight ? .clear : UIColor(white: 0.8, alpha: 1.0)
         button.lineWidth = 2
         button.name = name
-        button.zPosition = 101
         
-        let dot = SKShapeNode(circleOfRadius: width)
-        dot.fillColor = .black
-        dot.strokeColor = .clear
-        dot.name = name
-        dot.zPosition = 102
-        button.addChild(dot)
+        let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        label.text = text
+        label.fontSize = 18
+        label.fontColor = highlight ? .white : UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
+        label.verticalAlignmentMode = .center
+        label.name = name
+        button.addChild(label)
         
-        toolbarNode?.addChild(button)
+        menuPanel?.addChild(button)
     }
     
-    private func createColorButton(name: String, color: UIColor, position: CGPoint) {
-        let button = SKShapeNode(circleOfRadius: 15)
+    private func createPanelCloseButton(panel: SKNode, position: CGPoint) {
+        let button = SKShapeNode(rectOf: CGSize(width: 120, height: 40), cornerRadius: 10)
         button.position = position
-        button.fillColor = color
-        button.strokeColor = UIColor(white: 0.3, alpha: 1.0)
-        button.lineWidth = 2
-        button.name = name
-        button.zPosition = 101
+        button.fillColor = UIColor(red: 0.3, green: 0.6, blue: 1.0, alpha: 1.0)
+        button.strokeColor = .clear
+        button.name = "closePanel"
         
-        toolbarNode?.addChild(button)
+        let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        label.text = "Done"
+        label.fontSize = 18
+        label.fontColor = .white
+        label.verticalAlignmentMode = .center
+        label.name = "closePanel"
+        button.addChild(label)
+        
+        panel.addChild(button)
     }
     
-    // MARK: - Toolbar Interaction
+    private func closeAllPanels() {
+        if let panel = brushSizePanel {
+            animatePanelOut(panel)
+        }
+        if let panel = colorPalettePanel {
+            animatePanelOut(panel)
+        }
+        if let panel = menuPanel {
+            animatePanelOut(panel)
+        }
+        
+        isPanelOpen = false
+        isBrushPanelOpen = false
+        isColorPanelOpen = false
+    }
     
-    private func handleToolbarTouch(at position: CGPoint) {
+    private func animatePanelIn(_ panel: SKNode) {
+        panel.setScale(0.8)
+        panel.alpha = 0
+        
+        let scaleAction = SKAction.scale(to: 1.0, duration: 0.2)
+        scaleAction.timingMode = .easeOut
+        let fadeAction = SKAction.fadeIn(withDuration: 0.2)
+        
+        panel.run(SKAction.group([scaleAction, fadeAction]))
+    }
+    
+    private func animatePanelOut(_ panel: SKNode) {
+        let scaleAction = SKAction.scale(to: 0.8, duration: 0.15)
+        scaleAction.timingMode = .easeIn
+        let fadeAction = SKAction.fadeOut(withDuration: 0.15)
+        
+        panel.run(SKAction.group([scaleAction, fadeAction])) {
+            panel.removeFromParent()
+        }
+    }
+    
+    // MARK: - UI Interaction
+    
+    private func handleUITouch(at position: CGPoint) {
         let touchedNodes = nodes(at: position)
         
         for node in touchedNodes {
             guard let name = node.name else { continue }
             
-            // Menu button
+            // Top bar buttons
             if name == "menu" {
-                returnToMenu()
-                return
-            }
-            
-            // Save button
-            if name == "save" {
-                saveDrawing()
+                showMenuPanel()
                 animateButtonPress(node)
                 return
-            }
-            
-            // Share button
-            if name == "share" {
-                shareDrawing()
-                animateButtonPress(node)
-                return
-            }
-            
-            // Action buttons
-            if name == "undo" {
+            } else if name == "undo" {
                 undoLastLine()
                 animateButtonPress(node)
                 return
@@ -372,43 +788,133 @@ class GameScene: SKScene {
                 redoLastLine()
                 animateButtonPress(node)
                 return
-            } else if name == "clear" {
-                clearScreen()
+            }
+            
+            // Bottom bar buttons
+            if name == "pencil" {
+                setDrawingMode(.singleColor)
+                animateButtonPress(node)
+                setupBottomBar()
+                return
+            } else if name == "eraser" {
+                setDrawingMode(.eraser)
+                animateButtonPress(node)
+                setupBottomBar()
+                return
+            } else if name == "brushSize" {
+                showBrushSizePanel()
+                animateButtonPress(node)
+                return
+            } else if name == "colorPalette" {
+                showColorPalettePanel()
                 animateButtonPress(node)
                 return
             } else if name == "rainbow" {
                 setDrawingMode(.rainbow)
                 animateButtonPress(node)
+                setupBottomBar()
                 return
-            } else if name == "eraser" {
-                setDrawingMode(.eraser)
+            } else if name == "clear" {
+                showClearConfirmation()
                 animateButtonPress(node)
                 return
             }
             
-            // Line width buttons
-            if name == "thin" {
-                setLineWidth(2)
-                animateButtonPress(node)
-                return
-            } else if name == "medium" {
-                setLineWidth(5)
-                animateButtonPress(node)
-                return
-            } else if name == "thick" {
-                setLineWidth(10)
-                animateButtonPress(node)
+            // Panel interactions
+            if name == "closePanel" || name == "overlay" {
+                closeAllPanels()
                 return
             }
             
-            // Color buttons
-            if name.hasPrefix("color_") {
-                if let shapeNode = node as? SKShapeNode {
-                    pickColor(shapeNode.fillColor)
+            // Brush size selection
+            if name.hasPrefix("size_") {
+                if let sizeStr = name.split(separator: "_").last,
+                   let sizeValue = Double(String(sizeStr)) {
+                    setLineWidth(CGFloat(sizeValue))
                     animateButtonPress(node)
-                    return
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        self.closeAllPanels()
+                    }
                 }
+                return
             }
+            
+            // Color selection
+            if name.hasPrefix("color_") {
+                if let parent = node.parent,
+                   let colorCircle = parent.children.first(where: { $0 is SKShapeNode }) as? SKShapeNode {
+                    pickColor(colorCircle.fillColor)
+                    animateButtonPress(node)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        self.closeAllPanels()
+                    }
+                }
+                return
+            }
+            
+            // Menu panel options
+            if name == "save" {
+                saveDrawing()
+                animateButtonPress(node)
+                closeAllPanels()
+                return
+            } else if name == "share" {
+                shareDrawing()
+                animateButtonPress(node)
+                closeAllPanels()
+                return
+            } else if name == "newDrawing" {
+                showNewDrawingConfirmation()
+                return
+            } else if name == "mainMenu" {
+                returnToMenu()
+                return
+            } else if name == "resume" {
+                closeAllPanels()
+                return
+            }
+        }
+    }
+    
+    private func showClearConfirmation() {
+        let alert = UIAlertController(
+            title: "Clear Canvas?",
+            message: "This will erase your entire drawing. Are you sure?",
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Clear", style: .destructive) { _ in
+            self.clearScreen()
+        })
+        
+        if let viewController = self.view?.window?.rootViewController {
+            viewController.present(alert, animated: true)
+        }
+    }
+    
+    private func showNewDrawingConfirmation() {
+        let alert = UIAlertController(
+            title: "New Drawing?",
+            message: "Starting a new drawing will clear the current canvas. Would you like to save first?",
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Save & New", style: .default) { _ in
+            self.saveDrawing()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self.clearScreen()
+                self.closeAllPanels()
+            }
+        })
+        alert.addAction(UIAlertAction(title: "New Without Saving", style: .destructive) { _ in
+            self.clearScreen()
+            self.closeAllPanels()
+        })
+        
+        if let viewController = self.view?.window?.rootViewController {
+            viewController.present(alert, animated: true)
         }
     }
     
@@ -424,10 +930,6 @@ class GameScene: SKScene {
         let scaleUp = SKAction.scale(to: 1.0, duration: 0.1)
         let sequence = SKAction.sequence([scaleDown, scaleUp])
         node.run(sequence)
-    }
-    
-    private func updateToolbarSelection() {
-        setupToolbar() // Rebuild toolbar with current selection
     }
 }
 

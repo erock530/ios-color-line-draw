@@ -5,6 +5,15 @@
       location = "self:">
    </FileRef>
    <FileRef
-      location = "group:Info.plist">
+      location = "group:UI_REDESIGN_GUIDE.md">
+   </FileRef>
+   <FileRef
+      location = "group:QUICK_REFERENCE.md">
+   </FileRef>
+   <FileRef
+      location = "group:UI_REORGANIZATION_SUMMARY.md">
+   </FileRef>
+   <FileRef
+      location = "group:UI_VISUAL_LAYOUT.md">
    </FileRef>
 </Workspace>
