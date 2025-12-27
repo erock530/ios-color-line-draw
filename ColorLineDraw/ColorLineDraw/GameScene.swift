@@ -216,9 +216,12 @@ class GameScene: SKScene {
     }
     
     func saveDrawing() {
-        // Hide UI for clean screenshot
+        // Hide all UI for clean screenshot
         topBarNode?.isHidden = true
         bottomBarNode?.isHidden = true
+        brushSizePanel?.isHidden = true
+        colorPalettePanel?.isHidden = true
+        menuPanel?.isHidden = true
         
         // Render the scene to an image
         let texture = view?.texture(from: self)
@@ -226,6 +229,9 @@ class GameScene: SKScene {
         // Show UI again
         topBarNode?.isHidden = false
         bottomBarNode?.isHidden = false
+        brushSizePanel?.isHidden = false
+        colorPalettePanel?.isHidden = false
+        menuPanel?.isHidden = false
         
         guard let texture = texture else {
             showAlert(title: "Error", message: "Could not save drawing")
@@ -245,9 +251,12 @@ class GameScene: SKScene {
     }
     
     func exportToPhotos() {
-        // Hide UI for clean screenshot
+        // Hide all UI for clean screenshot
         topBarNode?.isHidden = true
         bottomBarNode?.isHidden = true
+        brushSizePanel?.isHidden = true
+        colorPalettePanel?.isHidden = true
+        menuPanel?.isHidden = true
         
         // Render the scene to an image
         let texture = view?.texture(from: self)
@@ -255,6 +264,9 @@ class GameScene: SKScene {
         // Show UI again
         topBarNode?.isHidden = false
         bottomBarNode?.isHidden = false
+        brushSizePanel?.isHidden = false
+        colorPalettePanel?.isHidden = false
+        menuPanel?.isHidden = false
         
         guard let texture = texture else {
             showAlert(title: "Error", message: "Could not export drawing")
@@ -311,9 +323,12 @@ class GameScene: SKScene {
     }
     
     func shareDrawing() {
-        // Hide UI for clean screenshot
+        // Hide all UI for clean screenshot
         topBarNode?.isHidden = true
         bottomBarNode?.isHidden = true
+        brushSizePanel?.isHidden = true
+        colorPalettePanel?.isHidden = true
+        menuPanel?.isHidden = true
         
         // Render the scene to an image
         let texture = view?.texture(from: self)
@@ -321,6 +336,9 @@ class GameScene: SKScene {
         // Show UI again
         topBarNode?.isHidden = false
         bottomBarNode?.isHidden = false
+        brushSizePanel?.isHidden = false
+        colorPalettePanel?.isHidden = false
+        menuPanel?.isHidden = false
         
         guard let texture = texture else {
             showAlert(title: "Error", message: "Could not share drawing")
